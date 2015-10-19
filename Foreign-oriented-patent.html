@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+
+    body {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      stroke-width: 1;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
+
+    .legend {
+      fill: black;
+      display: block;
+    }
+
+
+    </style>
+</head>
+<body>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script type="text/javascript">
+
+    var margin = {top:50, right:0, bottom:70, left:70},
+        width  = 900,
+        height = 600
+        legendWidth = 200;
+
+    var parseDate = d3.time.format("%Y").parse;
+
+    var x = d3.time.scale()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+    var line = d3.svg.line()
+        .x(function(d) { return x(d.year); })
+        .y(function(d) { return y(d.patents); })
+        //.interpolate("basis");
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right + legendWidth)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.csv("Patent_China_Patent_longformat.csv", function(error, data) {
+      var countries = {}
+      data.forEach(function(d) {
+        if (d.country && d.year) {
+          d.year = parseDate(d.year);
+          d.patents = +d.patents;
+          if (d.country in countries) {
+            countries[d.country].push({
+              year: d.year,
+              patents: d.patents
+            });
+          } else {
+            countries[d.country] = []
+          }
+        }
+      });
+
+      var countryData = []
+      for (country in countries) {
+        countryData.push({
+          name: country,
+          values: countries[country]
+        });
+      }
+      console.log(countryData);
+
+      x.domain(d3.extent(data, function(d) { return d.year; }));
+      y.domain([
+          d3.min(countryData, function(c) { return d3.min(c.values, function(v) { return v.patents; }); }),
+          d3.max(countryData, function(c) { return d3.max(c.values, function(v) { return v.patents; }); })
+      ])
+
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Number of patents");
+
+      var country = svg.selectAll(".country")
+          .data(countryData)
+          .enter()
+          .append("g")
+          .attr("class", "country");
+
+      country.append("path")
+          .attr("class", "line")
+          .attr("d", function(d) { 
+              return line(d.values);
+          });
+
+      country.append("text")
+          .datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; })
+          .attr("transform", function(d) { 
+              return "translate(" + x(d.value.year) + "," + y(d.value.patents) + ")";
+          })
+          .attr("x", 3)
+          .attr("dy", ".35em")
+          .attr('class', 'legend')
+          .text(function(d) { return d.name; });
+
+
+  /* Add 'curtain' rectangle to hide entire graph */
+  var curtain = svg.append('rect')
+    .attr('x', -1 * width)
+    .attr('y', -1 * height)
+    .attr('height', height)
+    .attr('width', width)
+    .attr('class', 'curtain')
+    .attr('transform', 'rotate(180)')
+    .style('fill', '#ffffff')
+
+  /* Optionally add a guideline */
+  var guideline = svg.append('line')
+    .attr('stroke', '#333')
+    .attr('stroke-width', 0)
+    .attr('class', 'guide')
+    .attr('x1', 1)
+    .attr('y1', 1)
+    .attr('x2', 1)
+    .attr('y2', height)
+
+  /* Create a shared transition for anything we're animating */
+  var t = svg.transition()
+    .delay(750)
+    .duration(6000)
+    .ease('linear')
+    .each('end', function() {
+      d3.select('line.guide')
+        .transition()
+        .style('opacity', 0)
+        .remove()
+    });
+
+  t.select('rect.curtain')
+    .attr('width', 0);
+  t.select('line.guide')
+    .attr('transform', 'translate(' + width + ', 0)')
+
+  d3.select("#show_guideline").on("change", function(e) {
+    guideline.attr('stroke-width', this.checked ? 1 : 0);
+    curtain.attr("opacity", this.checked ? 0.75 : 1);
+  })
+
+
+});
+
+
+
+
+    </script>
+</body>
+</html>
