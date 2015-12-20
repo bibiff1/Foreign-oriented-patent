@@ -25,12 +25,20 @@
       fill: none;
       stroke: steelblue;
       stroke-width: 1.5px;
+      stroke-opacity:.75;
     }
 
     .legend {
       fill: black;
       display: block;
     }
+
+    line.horizonalGrid{
+      fill : none;
+      shape-rendering : crispEdges;
+      stroke : black;
+      stroke-width : 1.5px;
+      } 
 
 
     </style>
@@ -41,8 +49,8 @@
     <script type="text/javascript">
 
     var margin = {top:50, right:0, bottom:70, left:70},
-        width  = 900,
-        height = 600
+        width  = 600,
+        height = 400,
         legendWidth = 200;
 
     var parseDate = d3.time.format("%Y").parse;
@@ -136,7 +144,7 @@
           .attr("transform", function(d) { 
               return "translate(" + x(d.value.year) + "," + y(d.value.patents) + ")";
           })
-          .attr("x", 3)
+          .attr("x", 0)
           .attr("dy", ".35em")
           .attr('class', 'legend')
           .text(function(d) { return d.name; });
@@ -187,6 +195,10 @@
 
 });
 
+
+
+/* create grid*/
+//Draw a grid
 
 
 
